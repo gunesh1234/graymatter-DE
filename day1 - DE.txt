@@ -1,0 +1,68 @@
+day 1
+
+create schema sw
+create table sw.dbtl(
+Id INT IDENTITY(1,1) NOT NULL,
+Name varchar(20),
+Address varchar(20));
+insert into sw.dbtl values('abc','xyz');
+insert into sw.dbtl values('efg','iox');
+select * from sw.dbtl;
+alter table sw.dbtl
+ADD age varchar(20);
+alter table sw.dbtl
+ADD gender varchar(3);
+update sw.dbtl SET age='23' WHERE id=1;
+update sw.dbtl SET age='24' WHERE id=2;
+update sw.dbtl SET gender='F' WHERE id=1;
+update sw.dbtl SET gender='M' WHERE id=2;
+ALTER TABLE sw.dbtl
+ADD CONSTRAINT AGE_DBTL 
+CHECK (age<30);
+insert into sw.dbtl values('gfi','kji','24','F');
+CREATE VIEW [female candidates]
+AS
+SELECT * FROM sw.dbtl WHERE gender='F';
+SELECT * FROM [female candidates];
+CREATE VIEW [male candidates]
+AS
+SELECT * FROM sw.dbtl WHERE age>20 AND gender='M';
+SELECT * FROM [male candidates];
+DROP VIEW [female candidates];
+SELECT * FROM [female candidates]
+DELETE FROM sw.dbtl WHERE gender='M';
+DELETE FROM sw.dbtl WHERE id=1;
+SELECT * FROM sw.dbtl WHERE address LIKE '%i';
+insert into sw.dbtl values('gfi','kji','25','M');
+insert into sw.dbtl values('gfg','koi','21','F');
+insert into sw.dbtl values('dgfg','koig','23','M');
+CREATE INDEX idx 
+ON sw.dbtl(gender);
+SELECT * FROM sw.dbtl WITH(INDEX(idx));
+CREATE INDEX idy
+ON sw.dbtl(age);
+SELECT * FROM sw.dbtl WITH(INDEX(idy));
+ALTER TABLE sw.dbtl DROP INDEX idx;
+CREATE Procedure SelectAll
+AS
+SELECT * FROM sw.dbtl
+GO;
+EXEC SelectAll;
+CREATE Procedure SelectAllOnes @gender varchar(20)
+AS
+BEGIN
+SELECT * FROM sw.dbtl WHERE @gender=gender
+END;
+EXEC selectAllOnes @gender='M';
+Create Procedure  SelectNeither @age varchar(20)
+AS
+BEGIN
+SELECT * FROM sw.dbtl WHERE @age = age
+END;
+EXEC SelectNeither @age=21;
+WITH EMP_AGE AS
+(SELECT * FROM sw.dbtl WHERE age>21)
+SELECT * FROM EMP_AGE;
+WITH EMP_GENDER AS
+( SELECT * FROM sw.dbtl WHERE gender='M')
+SELECT * FROM EMP_GENDER;
