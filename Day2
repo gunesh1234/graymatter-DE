@@ -1,0 +1,226 @@
+Triggers
+
+select * from Sales.Customer
+
+--Log table for trigger
+create table AuditLog(
+LogID int identity(1,1) primary key,
+InsertedTime datetime,
+InsertedBy nvarchar(100),
+UpdatedTime datetime,
+UpdatedBy nvarchar(100),
+DeletedTime datetime,
+DeletedBy nvarchar(100))
+
+select * from AuditLog
+
+--After insert trigger
+create trigger trg_AfterIn
+on Sales.Customer
+after insert
+as
+begin
+	insert into AuditLog (InsertedTime, InsertedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+Insert into Sales.Customer(PersonID, StoreID) values (30,1102)
+Insert into Sales.Customer(PersonID, StoreID) values (14,0602)
+
+--After update trigger
+create trigger trg_AfterUp
+on Sales.Customer
+after update
+as
+begin
+	insert AuditLog (UpdatedTime, UpdatedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+Update Sales.Customer set PersonID = 30 where CustomerID = 14
+Update Sales.Customer set PersonID = 14 where CustomerID = 30
+
+--After delete trigger
+create trigger trg_AfterDel
+on Sales.Customer
+after delete
+as
+begin
+	insert AuditLog (DeletedTime, DeletedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+delete from Sales.Customer where CustomerID = 1
+
+--instead of triggers
+create table InsteadLog(
+LogID int identity(1,1) primary key,
+personID int,
+logtime datetime)
+
+select* from InsteadLog
+
+--create instead of insert trigger
+create trigger trg_ins_in
+on Sales.SalesPerson
+instead of insert
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from inserted i
+end
+
+insert into Sales.SalesPerson(BusinessEntityID, SalesQuota) values(14,301102)
+insert into Sales.SalesPerson(BusinessEntityID, SalesQuota) values(30,140602)
+insert into Sales.SalesPerson(BusinessEntityID, SalesQuota) values(28,022024)
+
+--create instead of update trigger
+create trigger trg_ins_up
+on Sales.SalesPerson
+instead of update
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from inserted i
+end
+
+update Sales.SalesPerson set SalesQuota = 50000 where BusinessEntityID = 275
+
+--create instead of delete trigger
+create trigger trg_ins_del
+on Sales.SalesPerson
+instead of delete
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from deleted i
+end
+
+delete from Sales.SalesPerson where BusinessEntityID = 280
+
+Functions
+
+--Functions
+--Scalar Function 
+create function scalfunc(@unitprice decimal(10,2))
+returns decimal(11,2)
+as
+begin
+	declare @priceforten decimal(11,2)
+	set @priceforten = @unitprice * 10
+	return @priceforten
+end
+
+select ProductID, ListPrice, dbo.scalfunc(ListPrice) as PriceForTen 
+from Production.Product
+where ProductID>700
+
+create function TabFunc(@color nvarchar(15))
+returns table
+as 
+return(
+	select ProductID, Name, Color
+	from Production.Product where Color = @color
+)
+
+select * from dbo.TabFunc('Black')
+
+Transaction
+--Transactions
+begin transaction
+
+declare @FromWarehouseID int = 1
+Declare @ToWarehouseID int = 2
+declare @productID int = 1
+declare @quantityToTransfer int = 10
+
+update Production.ProductInventory
+set Quantity = Quantity - @quantityToTransfer
+where ProductID = @productID and LocationID = @FromWarehouseID
+
+update Production.ProductInventory
+set Quantity = Quantity + @quantityToTransfer
+where ProductID = @productID and LocationID = @ToWarehouseID
+Commit transaction
+print 'inventory tranfer complete'
+
+
+Stored Procedure
+
+create table ChangeLog_01(
+ChangeID int identity(1,1) primary key,
+SalesOrderID int,
+OldTaxAmt money,
+NewTaxAmt money,
+ChangeDate datetime default getdate())
+
+create trigger trg_afterupdate_01
+on Sales.SalesOrderHeader
+after update
+as
+begin
+insert into ChangeLog_01(SalesOrderID, OldTaxAmt, NewTaxAmt, ChangeDate)
+select i.SalesOrderID,d.taxamt,i.taxamt,getdate()
+from inserted i join deleted d on i.SalesOrderID=d.SalesOrderID
+end
+
+create table #temp_sales(
+SalesOrderID int primary key,
+OrderDate datetime,
+TotalDue decimal(10,4));
+
+create procedure sp_sales
+@customerID int,
+@salesid int,
+@newtaxamt money
+as
+begin
+begin transaction
+declare @totalsales money;
+
+with cte_TotalSalesAmt as(
+select c.CustomerID, sum(s.TotalDue) as totalamount
+from Sales.Customer c join Sales.SalesOrderHeader s 
+on c.CustomerID = s.CustomerID
+group by c.CustomerID
+having c.CustomerID = @customerID)
+select @totalsales = totalamount from cte_TotalSalesAmt
+print @totalsales
+
+insert into #temp_sales
+select SalesOrderID, OrderDate, TotalDue
+from Sales.SalesOrderHeader
+
+update Sales.SalesOrderHeader set TaxAmt = @newtaxamt
+where SalesOrderID = @salesid
+
+commit transaction
+end
+
+exec sp_sales @customerID = 100 ,@salesid = 100,@newtaxamt=20000
+
+
+
+with cte as(
+select sod.ProductID,sum(sod.OrderQty) as totalorder
+from Sales.SalesOrderDetail sod join Sales.SalesOrderHeader soh
+on sod.SalesOrderID = soh.SalesOrderID
+where soh.OrderDate between '2011-05-31 00:00:00.000' and '2012-01-29 00:00:00.000'
+group by sod.ProductID)
+update Production.ProductInventory set Quantity = Quantity - totalorder from cte
+
+
+with cte2 as(
+select sod.ProductID as acx,sum(OrderQty) as abc
+from Sales.SalesOrderDetail sod join Sales.SalesOrderHeader soh
+on sod.SalesOrderID = soh.SalesOrderID
+where OrderDate between '2014-06-30 00:00:00.000' and '2013-06-30 00:00:00.000'
+group by ProductID
+having  sum(sod.OrderQty)<= 0 
+)
+delete from Production.ProductInventory where ProductID in (select cte2.acx from cte2)
+
+select OrderDate from Sales.SalesOrderHeader order by OrderDate desc
