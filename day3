@@ -1,0 +1,158 @@
+CREATE TABLE scd01(
+    SurrogateKey INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID INT,
+    CustomerName VARCHAR(50),
+    EffectiveDate DATETIME,
+    ExpiryDate DATETIME
+);
+
+-- Insert initial data
+INSERT INTO scd01 (CustomerID, CustomerName, EffectiveDate, ExpiryDate)
+VALUES (1, 'Customer A', '2024-01-01', NULL);
+
+-- Update the record (overwrite)
+UPDATE scd01
+SET CustomerName = 'Customer A Updated',
+    EffectiveDate = GETDATE(), 
+    ExpiryDate = GETDATE() 
+WHERE CustomerID = 1;
+
+select * FROM scd01;
+-- Create scd2 table 
+CREATE TABLE scd2 (
+    SurrogateKey INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID INT,
+    CustomerName VARCHAR(50),
+    EffectiveDate DATETIME,
+    ExpiryDate DATETIME,
+    
+);
+
+-- Insert initial data
+INSERT INTO scd2 (CustomerID, CustomerName, EffectiveDate, ExpiryDate)
+VALUES (2, 'Customer B', '2024-01-01', '2024-09-06');
+
+-- Update the record (add new row for history)
+INSERT INTO scd2 (CustomerID, CustomerName, EffectiveDate, ExpiryDate)
+VALUES (2, 'Customer B Updated', '2024-07-01', NULL);
+
+
+UPDATE scd2
+SET ExpiryDate = '2024-07-01'
+WHERE CustomerID = 2 AND EffectiveDate < '2024-07-01';
+
+select * from scd2;
+
+CREATE TABLE scd3 (
+    CustomerID INT PRIMARY KEY,
+    CustomerName VARCHAR(50),
+    EffectiveDate DATETIME,
+    ExpiryDate DATETIME,
+    PreviousCustomerName VARCHAR(50)
+);
+
+
+INSERT INTO scd3 (CustomerID, CustomerName, EffectiveDate, ExpiryDate, PreviousCustomerName)
+VALUES (3, 'Customer C', '2024-01-01', NULL, NULL);
+
+
+UPDATE scd3
+SET CustomerName = 'Customer C Updated',
+    PreviousCustomerName = 'Customer C',
+    ExpiryDate = GETDATE() 
+WHERE CustomerID = 3;
+
+select * FROM scd3;
+
+
+
+create database gunesh
+create schema sumpt
+create table sumpt.Customers(
+   CustomerID INT,
+   Name VARCHAR(20),
+   Address VARCHAR(20));
+INSERT INTO sumpt.Customers VALUES(1,'abc','xyz');
+INSERT INTO sumpt.Customers VALUES(2,'abd','xtc');
+exec sys.sp_cdc_enable_db;
+exec sys.sp_cdc_enable_table
+     @source_schema = N'sumpt',
+	 @source_name = N'Customers',
+	 @role_name = NULL;
+select * from cdc.sumpt_Customers_CT;
+INSERT INTO sumpt.Customers VALUES(3,'avb','xfd');
+INSERT INTO sumpt.Customers VALUES(4,'avbt','xfid');
+delete from sumpt.Customers WHERE CustomerID=1;
+
+
+
+create schema sty
+-- Create dimCustomer table
+CREATE TABLE sty.dimCustomer (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Address VARCHAR(200)
+);
+
+
+----------------------------------------------------------------
+-- Insert values into dimCustomer
+INSERT INTO sty.dimCustomer (CustomerID, Name, Address)
+VALUES
+    (1, 'John Doe', '123 Main St'),
+    (2, 'Jane Smith', '456 Elm St'),
+    (3, 'Michael Johnson', '789 Oak St');
+
+-- Create temporary table #tmpCustomer
+CREATE TABLE #tmpCustomer (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    Address VARCHAR(200)
+);
+
+-- Insert rows into #tmpCustomer
+INSERT INTO #tmpCustomer (CustomerID, Name, Address)
+VALUES
+    (1, 'John Doe', '123 Main St'),   
+    (2, 'Jane Johnson', '456 Elm St'), 
+    (4, 'Anna Lee', '890 Pine St');   
+
+-- Perform MERGE statement to synchronize data between dimCustomer and #tmpCustomer
+MERGE INTO sty.dimCustomer AS target
+USING #tmpCustomer AS source
+ON target.CustomerID = source.CustomerID
+WHEN MATCHED THEN
+    UPDATE SET
+        target.Name = source.Name,
+        target.Address = source.Address
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT (CustomerID, Name, Address)
+    VALUES (source.CustomerID, source.Name, source.Address)
+WHEN NOT MATCHED BY SOURCE THEN
+    DELETE;
+
+SELECT * FROM sty.dimCustomer;
+SELECT * FROM #tmpCustomer;
+
+
+--FULL LOAD
+UPDATE Sales.CustomerDimSET RecordENdDate=GETDATE(),IsCurrent=0,IsDeleted=1
+WHERE CustomerID IN(
+SELECT CustomerID FROM Sales.CustomerDim
+WHERE IsCurrent=1
+)AND CustomerID NOT IN(
+SELECT CustomerID
+FROM #CustomerTemp);
+
+--INCREMENTAL LOAD
+UPDATE Sales.CustomerDimSET RecordENdDate=GETDATE(),IsCurrent=0,IsDeleted=1
+WHERE CustomerID IN(
+SELECT CustomerID FROM Sales.CustomerDim
+WHERE IsCurrent=1
+) AND customerID IN(
+SELECT CustomerID
+FROM #CustomerIncremental
+Where IsDeleted=1
+
+SELECT * FROM sty.dimCustomer;
+SELECT * FROM #tmpCustomer;
