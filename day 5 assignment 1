@@ -1,0 +1,192 @@
+-- 1. Data Extraction and Basic Queries:
+--1.1 Retrieve a list of all products with their names, product numbers, and list prices. 
+select Name,ListPrice,ProductNumber from Production.Product;
+Description:This query retrieves the product name, list price, and product number from the Production.Product table.
+----------------------------------------------------------------------------------
+--1.2 List the top 10 most expensive products. 
+SELECT TOP 10 ProductID,Name AS ProductName,ListPrice FROM Production.Product
+ORDER BY ListPrice DESC;
+Description : This query selects the top 10 products by ProductID, displaying their names as ProductName and list prices, sorted in descending order by ListPrice from the Production.Product table.
+----------------------------------------------------------------------------------
+--1.3 Find the total number of orders for each customer. 
+SELECT cus.CustomerID AS CustomerID, per.FirstName AS firstname , per.LastName AS lastname,COUNT(soh.SalesOrderID) AS TotalOrders FROM Sales.Customer AS cus JOIN Person.Person AS per ON cus.PersonID = per.BusinessEntityID JOIN Sales.SalesOrderHeader AS soh ON cus.CustomerID = soh.CustomerID GROUP BY cus.CustomerID, per.FirstName, per.LastName ORDER BY TotalOrders DESC;
+
+Description :This query retrieves customer information including CustomerID, first name , last name along with the total number of orders each customer has placed. It joins tables Sales.Customer, Person.Person and Sales.SalesOrderHeader to gather this data, grouping results by customer and sorting them in descending order based on the total number of orders.
+
+----------------------------------------------------------------------------------
+-- 2. Advanced SQL Queries:
+-- 2.1 Calculate the total sales for each product category. 
+
+SELECT pc.Name AS ProductCategory,SUM(soh.TotalDue) as SalesAmount , count(sod.SalesOrderID) AS TotalSales FROM Sales.SalesOrderHeader soh JOIN Sales.SalesOrderDetail sod ON soh.SalesOrderID = sod.SalesOrderID JOIN Production.Product p ON sod.ProductID = p.ProductID JOIN Production.ProductSubcategory psuc ON p.ProductSubcategoryID = psuc.ProductSubcategoryID JOIN Production.ProductCategory pc ON psuc.ProductCategoryID = pc.ProductCategoryID GROUP BY pc.Name ORDER BY TotalSales DESC;
+
+Description:This query calculates the total sales amount (SalesAmount) and the total number of sales for each product category . It joins multiple tables to aggregate sales data, grouping results by product category and sorting them in descending order based on the total number of sales.
+----------------------------------------------------------------------------------
+
+--2.2  Identify the top 5 customers by total purchase amount. 
+SELECT TOP 5 cus.CustomerID,SUM(soh.TotalDue) AS TotalPurchaseAmount FROM Sales.Customer AS cus JOIN Sales.SalesOrderHeader AS soh ON cus.CustomerID = soh.CustomerID GROUP BY cus.CustomerID ORDER BY TotalPurchaseAmount DESC;
+
+Description: This query retrieves the top 5 customers by their CustomerID along with their total purchase amount (TotalPurchaseAmount). It joins the Sales.Customer and Sales.SalesOrderHeader tables to aggregate the total amount due TotalDue for each customer, grouping results by CustomerID, and sorting them in descending order based on the total purchase amount.
+----------------------------------------------------------------------------------
+
+--2.3  Find the average order quantity for each product. 
+SELECT pro.ProductID, pro.Name AS ProductName,AVG(sod.OrderQty) AS AvgOrderQuantity FROM Production.Product pro JOIN Sales.SalesOrderDetail sod ON pro.ProductID = sod.ProductID GROUP BY pro.ProductID, pro.Name ORDER BY AvgOrderQuantity DESC;
+--or--
+select productid,avg(orderqty) as avgorderqty from Sales.SalesOrderDetail s group by s.productid;
+
+Description:This query computes the average order quantity per product by joining Production.Product with Sales.SalesOrderDetail on ProductID, grouping by ProductID and ProductName, and sorting in descending order by average order quantity.
+
+----------------------------------------------------------------------------------
+
+--3 Data Manipulation and Analysis:
+--3.1 Update the list price of all products in the 'Bikes' category by increasing it by 10%. 
+select * from Production.ProductCategory;
+
+UPDATE p SET p.ListPrice = p.ListPrice * 1.1 FROM Production.Product p JOIN Production.ProductSubcategory psc ON p.ProductSubcategoryID = psc.ProductSubcategoryID JOIN Production.ProductCategory pc ON psc.ProductCategoryID = pc.ProductCategoryID WHERE pc.Name = 'Bikes';
+-- To check whether it is visible
+select p.ListPrice,pc.name from Production.product p JOIN Production.ProductSubcategory psub ON p.ProductSubcategoryID = psub.ProductSubcategoryID JOIN Production.ProductCategory pc ON psub.ProductCategoryID=pc.ProductCategoryID  where pc.name='Bikes';
+
+Description:This SQL update statement increases the ListPrice of products in the 'Bikes' category by 10% by joining the Production.Product table with related tables to ensure updates are applied specifically to products categorized as 'Bikes'.
+----------------------------------------------------------------------------------
+--3.2  Delete all records of products that have never been sold. 
+
+with cte2 as(              
+select sod.ProductID as pid,sum(OrderQty) as abd from Sales.SalesOrderDetail sod join Sales.SalesOrderHeader soh on sod.SalesOrderID = soh.SalesOrderID group by ProductID having  sum(sod.OrderQty)<= 0)
+delete from Production.ProductInventory where ProductID in (select ProductID from cte2)
+
+Description: This SQL query deletes all records of products that have never been sold
+----------------------------------------------------------------------------------
+--3.3 Insert a new product into the database. 
+INSERT INTO Production.Product (Name,ProductNumber,StandardCost,ListPrice,SellStartDate,ProductSubcategoryID,ProductModelID,ModifiedDate) VALUES ('Atlas cycle','NP-0002',    25.00,50.00,GETDATE(),22222,1000,GETDATE());
+
+Description: This SQL query inserts a new product into database
+----------------------------------------------------------------------------------
+--4. Optimization Techniques:
+--4.1 Create an index on the SalesOrderDetail table to optimize queries for retrieving sales order details by product ID
+CREATE INDEX IX_ProductID ON Sales.SalesOrderDetail (ProductID);
+
+Description: This SQL query creates an index on SalesOrderDetail
+----------------------------------------------------------------------------------
+--4.2 Write a query to find all orders placed in the last 30 days and analyze its execution plan. 
+SELECT * FROM Sales.SalesOrderDetail WHERE ModifiedDate >= DATEADD(day, -30,'2012-11-20 00:00:00');
+
+Description: This SQL query finds all orders placed in last 30 days
+----------------------------------------------------------------------------------
+--5. Working with Indexes and Views:
+--5.1 Create a view that shows the total sales amount for each salesperson.
+CREATE OR ALTER VIEW SalesPerson_TotalSales3 AS
+SELECT soh.SalesPersonID,SUM(soh.TotalDue) AS TotalSalesAmount
+FROM Sales.SalesOrderHeader soh JOIN Sales.SalesPerson spn ON soh.SalesPersonID = spn.BusinessEntityID GROUP BY soh.SalesPersonID;
+
+Description : This SQL query creates a view that shows the total sales amount for each salesperson
+----------------------------------------------------------------------------------
+--5.2  Use this view to find the top 3 salespersons by total sales. 
+SELECT TOP 3 SalesPersonID,TotalSalesAmount FROM SalesPerson_TotalSales3 ORDER BY TotalSalesAmount DESC;
+
+Description: This query selects top 3 Salesperson by total sales.
+----------------------------------------------------------------------------------
+--7. Stored Procedures and Triggers:
+--7.1 Write a stored procedure to generate a sales report for a given date range.
+CREATE PROCEDURE GenerateSalesReport4
+    @StartDate DATE,
+    @EndDate DATE
+AS
+BEGIN
+    SELECT soh.OrderDate, per.Name AS ProductName, sod.OrderQty, sod.LineTotal
+    FROM Sales.SalesOrderHeader AS soh
+    JOIN Sales.SalesOrderDetail AS sod ON soh.SalesOrderID = sod.SalesOrderID
+    JOIN Production.Product AS per ON sod.ProductID = per.ProductID
+    WHERE soh.OrderDate BETWEEN @StartDate AND @EndDate;
+END;
+-- Specify the date range (start_date and end_date)
+DECLARE @start_date DATE = '2011-07-01';
+DECLARE @end_date DATE = '2012-07-31';
+--execute the stored procedure
+EXEC GenerateSalesReport4 @StartDate = @start_date, @EndDate = @end_date;
+
+Description : This Query gives stored procedure to generate a sales report for a given date range.
+
+----------------------------------------------------------------------------------
+--7.2 Create a trigger that automatically updates the stock quantity when a new sales order is placed
+create trigger after_stock
+on Sales.SalesOrderDetail
+after insert
+as
+begin
+update Production.ProductInventory set Quantity = Quantity + i.OrderQty
+from inserted i  where Production.ProductInventory.ProductID = i.ProductID
+end;
+
+Description : It creates atrigger that automatically updates the stock quantity when new sales order is placed
+----------------------------------------------------------------------------------
+
+8. ETL and Data Processing:
+8.1 Build a simple ETL pipeline that extracts customer data, transforms it by standardizing phone number formats, and loads it into a new table.
+
+--extract
+SELECT  PhoneNumberTypeID, PhoneNumber FROM Person.PersonPhone ORDER BY 
+PhoneNumberTypeID DESC;
+--transform
+SELECT PhoneNumberTypeID,CONCAT('+1 (', SUBSTRING(PhoneNumber, 1, 3), ') ', SUBSTRING(PhoneNumber, 4, 3), '-', SUBSTRING(PhoneNumber, 7, 4)) AS FormattedPhoneNumber FROM Person.PersonPhone ORDER BY PhoneNumberTypeID DESC;
+-- Create 
+CREATE TABLE TransformedPersonPhone1(
+ PhoneNumberTypeID INT, FormattedPhoneNumber VARCHAR(20) 
+);
+-- Insert 
+INSERT INTO TransformedPersonPhone1 (PhoneNumberTypeID, FormattedPhoneNumber)
+SELECT PhoneNumberTypeID,CONCAT('+1 (', SUBSTRING(PhoneNumber, 1, 3), ') ', SUBSTRING(PhoneNumber, 4, 3), '-', SUBSTRING(PhoneNumber, 7, 4))FROM Person.PersonPhone; 
+
+Description : These sql queries Build a simple ETL pipeline that extracts customer data, transforms it by standardizing phone number formats, and loads it into a new table.
+----------------------------------------------------------------------------------
+
+8.2 Design a data model for a reporting database that consolidates sales, product, and customer data. 
+
+CREATE DATABASE Datasets;
+CREATE TABLE Customers (
+    CustomerID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    Address VARCHAR(100),
+    City VARCHAR(50),
+    State VARCHAR(50),
+    ZipCode VARCHAR(20)
+);
+
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY,
+    ProductName VARCHAR(100),
+    Description VARCHAR(255),
+    Category VARCHAR(50),
+    Price DECIMAL(10, 2),
+    Supplier VARCHAR(100),
+    Weight DECIMAL(8, 2),
+    Dimensions VARCHAR(50)
+);
+
+CREATE TABLE Sales (
+    SaleID INT PRIMARY KEY,
+    CustomerID INT,
+    ProductID INT,
+    SaleDate DATE,
+    Quantity INT,
+    TotalAmount DECIMAL(10, 2),
+    PaymentMethod VARCHAR(50),
+    ShippingAddress VARCHAR(100),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+Description : These sql queries is uesd Design a data model for a reporting database that consolidates sales, product, and customer data. 
+
+----------------------------------------------------------------------------------
+9. Reporting and Data Visualization:
+--9.1 Create a basic report showing monthly sales trends for the current year.
+
+Description : Created a basic report showing monthly sales trends for the current year using power BI.
+
+----------------------------------------------------------------------------------
+--9.2 Develop a visualization that displays the distribution of product categories interms of total sales. 
+
+Description :Developed a visualization that displays the distribution of product categories interms of total sales. 
+
