@@ -1,0 +1,134 @@
+Explored basic power BI.
+Made few reports and a dashboard.
+Used csv files as data.
+
+
+Revised SQL and DE concepts
+
+All DDL, DML statements.
+temp table, cte, cdc. 
+6 types of Triggers, scalar and tabular functions and stored procedures.
+Merging.
+
+--After insert trigger
+create trigger trg_AfterIn
+on Sales.Customer
+after insert
+as
+begin
+	insert into AuditLog (InsertedTime, InsertedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+--After update trigger
+create trigger trg_AfterUp
+on Sales.Customer
+after update
+as
+begin
+	insert AuditLog (UpdatedTime, UpdatedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+--After delete trigger
+create trigger trg_AfterDel
+on Sales.Customer
+after delete
+as
+begin
+	insert AuditLog (DeletedTime, DeletedBy)
+	values (GETDATE(),SUSER_NAME())
+end;
+
+--create instead of insert trigger
+create trigger trg_ins_in
+on Sales.SalesPerson
+instead of insert
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from inserted i
+end
+
+--create instead of update trigger
+create trigger trg_ins_up
+on Sales.SalesPerson
+instead of update
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from inserted i
+end
+
+--create instead of delete trigger
+create trigger trg_ins_del
+on Sales.SalesPerson
+instead of delete
+as
+begin
+	insert into InsteadLog(personID, logtime)
+	select i.BusinessEntityID, getdate() 
+	from deleted i
+end
+
+
+--Functions
+--Scalar Function 
+create function scalfunc(@unitprice decimal(10,2))
+returns decimal(11,2)
+as
+begin
+	declare @priceforten decimal(11,2)
+	set @priceforten = @unitprice * 10
+	return @priceforten
+end
+
+select ProductID, ListPrice, dbo.scalfunc(ListPrice) as PriceForTen 
+from Production.Product
+where ProductID>700
+
+create function TabFunc(@color nvarchar(15))
+returns table
+as 
+return(
+	select ProductID, Name, Color
+	from Production.Product where Color = @color
+)
+
+
+
+
+--Merge
+create table targett(
+ID int primary key,
+Pname nvarchar(15),
+Loc nvarchar(15))
+
+create table #source(
+ID int primary key,
+Pname nvarchar(15),
+Loc nvarchar(15))
+
+insert into targett values
+(1, 'Norris', 'UK'),
+(2, 'Leclerc', 'Monaco'),
+(3, 'Ricciardo', 'Austria'),
+(4, 'Perez', 'Mexico'),
+(5, 'Zhou', 'China')
+
+insert into #source values
+(1, 'Norris', 'UK'),
+(2, 'Leclerc', 'Monaco'),
+(3, 'Ricciardo', 'Australia'),
+(6, 'Lauda', 'Austria'),
+(5, 'Guanyu', 'China')
+
+merge targett as target using #source as source
+on (target.ID = source.ID)
+when matched and (target.Pname <> source.Pname or target.Loc <> source.Loc)
+then update set target.Pname = source.Pname, target.Loc = source.Loc
+when not matched by target
+then insert values(source.ID, source.Pname, source.Loc);
+
