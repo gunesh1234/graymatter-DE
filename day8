@@ -1,0 +1,498 @@
+Python Assignment
+1. Data Manipulation with Pandas:
+1.a. Given a dataset in the form of a dictionary, convert it to a DataFrame and perform
+the following tasks:
+
+import pandas as pd
+data = {
+    'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+    'Age': [25, 30, None, 35, 40],  # introducing missing value for demonstration
+    'City': ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Seattle'],
+    'Gender': ['F', 'M', 'M', 'M', 'F']
+}
+
+df = pd.DataFrame(data)
+
+print("Initial DataFrame:")
+print(df)
+
+#1. Remove rows with missing values
+df_cleaned = df.dropna()
+print("\nDataFrame after removing rows with missing values:")
+print(df_cleaned)
+
+#2. Group the data by 'Product' and calculate the total sales for each product.
+
+total_sales = df.groupby('Product')['Sales'].sum().reset_index()
+print("\nTotal sales for each product:")
+print(total_sales)
+
+#3. Sort the results by total sales in descending order
+
+total_sales_sorted = total_sales.sort_values(by='Sales', ascending=False)
+print("\nTotal sales sorted by total sales in descending order:")
+print(total_sales_sorted)
+-------------------------------------------------------------------------------------------------------------------
+1.b  Create a pivot table that shows the sum of sales for each product, broken down
+by month.
+
+import pandas as pd
+data = {
+    'Product': ['A', 'B', 'A', 'B', 'A'],
+    'Sales': [100, 150, 200, 300, 250],
+    'Month': ['Jan', 'Feb', 'Jan', 'Feb', 'Mar']
+}
+df = pd.DataFrame(data)
+print("Initial DataFrame:")
+print(df)
+
+pivot_table = pd.pivot_table(df, values='Sales', index='Product', columns='Month', aggfunc='sum')
+print("\nPivot table showing sum of sales for each product, broken down by month:")
+print(pivot_table)
+-------------------------------------------------------------------------------------------------------------------
+2.Data Cleaning:
+2.a.Write a function that takes a DataFrame with various types of data (numeric,
+text, dates) and performs the following cleaning steps:
+  1. Replace all empty strings with NaN.
+  2. Fill numeric NaNs with the mean of their column.
+  3.Convert all text to lowercase.
+
+import pandas as pd
+import numpy as np
+def clean_dataframe(df):
+    # 1. Replace empty strings with NaN
+    df.replace('', np.nan, inplace=True)
+    
+    # 2. Convert all text columns to lowercase
+    df = df.apply(lambda x: x.str.lower() if x.dtype == 'object' else x)
+    
+    #3.  Fill numeric NaNs with the mean of their respective columns
+    for col in df.select_dtypes(include='number'):
+        df[col].fillna(df[col].mean(), inplace=True)
+    
+    return df
+
+data = {
+    'Name': ['Alice', 'Bob', '', 'David', 'Eve'],
+    'Age': [25, 30, np.nan, 35, 40],
+    'City': ['New York', 'Los Angeles', 'Chicago', '', 'Seattle'],
+    'Gender': ['F', 'M', 'M', 'M', 'F']
+}
+df = pd.DataFrame(data)
+
+cleaned_df = clean_dataframe(df)
+
+print("Cleaned DataFrame:")
+print(cleaned_df)
+-------------------------------------------------------------------------------------------------------------------
+2.b Write a function that detects and removes outliers from a numeric column in a
+DataFrame using the IQR method.
+
+import pandas as pd
+
+def remove_outliers(df, column):
+    Q1 = df[column].quantile(0.25)
+    Q3 = df[column].quantile(0.75)
+    
+    IQR = Q3 - Q1
+    
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    
+    df_cleaned = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
+    
+    return df_cleaned
+
+data = {
+    'Score': [85, 88, 84, 91, 70, 100, 99, 82, 81, 120, 79, 78]
+}
+df = pd.DataFrame(data)
+cleaned_df = remove_outliers(df, 'Score')
+
+print("Cleaned DataFrame after removing outliers:")
+print(cleaned_df)
+
+-------------------------------------------------------------------------------------------------------------------
+3.  Lambda Functions and Map-Reduce:
+a. Use a lambda function to filter out even numbers from a list of integers.
+
+num = [1, 2, 3, 4, 5, 6, 8, 9, 10,12,15]
+filtering = list(filter(lambda x: x % 2 != 0, num))
+print("Original list:", num)
+print("Filtered list (odd numbers only):", filtering)
+
+-------------------------------------------------------------------------------------------------------------------
+ b.Use the reduce function to calculate the product of the remaining numbers.
+
+from functools import reduce
+numb = [1, 2, 3, 4, 5,10]
+ Calculate the product of numbers using reduce and lambda function
+prod = reduce(lambda x, y: x * y, numb)
+print("List of numbers:", numb)
+print("Product of numbers:", prod)
+
+-------------------------------------------------------------------------------------------------------------------
+ c.Use a lambda function with the ϐilter function to remove words from a list that
+are shorter than 4 characters. Then, use reduce to concatenate the remaining
+words into a single string.
+
+from functools import reduce
+words = ["python", "programming", "dat", "analysis", "machine", "learning"]
+resulting_string = reduce(lambda x, y: x + " " + y, filter(lambda word: len(word) >= 4, words))
+print("List of words:", words)
+print("Concatenated string:", resulting_string)
+-------------------------------------------------------------------------------------------------------------------
+4. Data Visualization:
+ a. Using Matplotlib, create a line chart showing the trend of sales over time from
+the given dataset.
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = {
+    'Date': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05', 
+             '2023-01-06', '2023-01-07', '2023-01-08', '2023-01-09', '2023-01-10'],
+    'Sales': [100, 120, 130, 150, 160, 180, 200, 210, 220, 230]
+}
+
+df = pd.DataFrame(data)
+df['Date'] = pd.to_datetime(df['Date'])  # Convert 'Date' column to datetime format
+
+plt.figure(figsize=(12, 6))
+plt.plot(df['Date'], df['Sales'], marker='o', linestyle='-', color='b')
+
+plt.show()
+
+
+-------------------------------------------------------------------------------------------------------------------
+4.b   Customize the chart with labels, title, and legend.
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+data = {
+    'Date': ['2023-02-01','2023-02-02','2023-02-03', '2023-02-04','2023-02-05',
+             '2023-02-06','2023-02-07','2023-02-08','2023-02-09', '2023-02-10'],
+    'Sales': [120, 110, 140, 160, 170, 190, 180, 220, 210, 240]
+}
+df = pd.DataFrame(data)
+
+plt.figure(figsize=(10, 6))  # Adjust figure size as needed
+plt.plot(df['Date'], df['Sales'], marker='o', color='g', label='Sales Trend')
+plt.title('Sales Trend Over Time')
+plt.xlabel('Date')
+plt.ylabel('Sales')
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+ 
+-------------------------------------------------------------------------------------------------------------------
+4.c. Create a scatter plot showing the relationship between two numerical columns
+in a DataFrame. Add a trend line to the scatter plot.
+
+import numpy as np
+np.random.seed(0)
+x = np.random.randn(50)
+y = 2 * x + np.random.randn(50)
+plt.figure(figsize=(8, 6))
+plt.scatter(x, y, color='b', label='Data Points')
+m, b = np.polyfit(x, y, 1)  # Calculate slope and intercept of the trend line
+plt.plot(x, m * x + b, color='g', label='Trend Line')
+
+ 
+
+-------------------------------------------------------------------------------------------------------------------
+
+5. Data Aggregation:
+
+5.a Given a list of dictionaries representing transactions, write a function to
+aggregate the total amount spent by each user.
+
+
+def aggregate_total_spent(transactions):
+    total_spent = {}  
+
+    for transaction in transactions:
+        user = transaction['user']
+        amount = transaction['amount']
+
+        if user in total_spent:
+            total_spent[user] += amount
+        else:
+            total_spent[user] = amount
+
+    return total_spent
+
+
+transactions = [
+    {'user': 'Sahil', 'amount': 100},
+    {'user': 'Saurav', 'amount': 150},
+    {'user': 'Sahil', 'amount': 200},
+    {'user': 'Darshan', 'amount': 50},
+    {'user': 'Saurav', 'amount': 120}
+]
+
+total_spent = aggregate_total_spent(transactions)
+print("Total amount spent by each user:")
+for user, amount in total_spent.items():
+    print(f"{user}: {amount}")
+
+-------------------------------------------------------------------------------------------------------------------
+5.b Write a function that calculates the moving average of the total amount spent by
+each user over a speciϐied window size
+
+from collections import defaultdict,deque
+def moving_average_total_spent(transactions, window_size):
+    user_total = defaultdict(list)
+    moving_avg = defaultdict(float)
+    
+    for transaction in transactions:
+        user = transaction['user']
+        amount = transaction['amount']
+        user_total[user].append(amount)
+        
+        if len(user_total[user]) > window_size:
+            user_total[user].pop(0)
+        
+        total_spent = sum(user_total[user])
+        moving_avg[user] = total_spent / len(user_total[user])
+    
+    return dict(moving_avg)
+window_size = 3
+moving_avg = moving_average_total_spent(transactions, window_size)
+print("\nMoving average of total amount spent by each user:")
+print(moving_avg)
+-------------------------------------------------------------------------------------------------------------------
+6. Exception Handling:
+6.a Write a function that handles division by zero and returns a meaningful error
+message when a division by zero occurs.
+
+def safe_divide(a, b):
+    try:
+        result = a / b
+    except ZeroDivisionError:
+        return "Error: Division by zero is not allowed."
+    else:
+        return result
+print(safe_divide(10, 2))   
+print(safe_divide(5, 0))  
+-------------------------------------------------------------------------------------------------------------------
+6.b  Write a function that takes a list of ϐile paths and attempts to open each one,
+handling FileNotFoundError, PermissionError, and IOError, and logging the
+results.
+
+import logging
+def open_files(file_paths):
+     logging.basicConfig(filename='file_opening.log', level=logging.INFO, format='%(asctime)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    for file_path in file_paths:
+        try:
+            with open(file_path, 'r') as file:
+                logging.info(f"Successfully opened file: {file_path}")
+        except FileNotFoundError:
+            logging.error(f"FileNotFoundError: File not found: {file_path}")
+        except PermissionError:
+            logging.error(f"PermissionError: Permission denied: {file_path}")
+        except IOError:
+            logging.error(f"IOError: Unable to open file: {file_path}")
+        except Exception as e:
+            logging.error(f"Unexpected error occurred while opening file {file_path}: {str(e)}")
+file_paths = ['file1.txt', 'file2.txt', 'file3.txt', '/root/somefile.txt']
+open_files(file_paths)
+-------------------------------------------------------------------------------------------------------------------
+7. Working with Dates:
+7.a Write a function that takes a list of date strings in various formats and converts
+them to a standardized format (YYYY-MM-DD).
+
+from datetime import datetime
+def standardize_date_formats(date_strings):
+    standardized_dates = []  
+    for date_str in date_strings:
+        try:
+             date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            try:
+                date_obj = datetime.strptime(date_str, '%m/%d/%Y')
+            except ValueError:
+                try:
+                    date_obj = datetime.strptime(date_str, '%d-%b-%Y')
+                except ValueError:
+                    try:
+                        date_obj = datetime.strptime(date_str, '%Y-%b-%d')
+                    except ValueError:
+                        print(f"Skipping invalid date format: {date_str}")
+                        continue
+        
+        
+        standardized_dates.append(date_obj.strftime('%Y-%m-%d'))
+    
+    return standardized_dates
+date_strings = ['2023-12-25', '12/31/2024', '15-Aug-2025', '2026-Sep-30', 'InvalidDate']
+standardized_dates = standardize_date_formats(date_strings)
+print("Standardized Dates:")
+print(standardized_dates)
+
+-------------------------------------------------------------------------------------------------------------------
+7.b Write a function that calculates the number of business days between two given
+dates, excluding weekends and holidays.
+
+from datetime import datetime, timedelta
+
+def is_business_day(date):
+    return date.weekday() < 5
+
+def calculate_business_days(start_date, end_date, holidays=[]):
+    current_date = start_date
+    business_days_count = 0
+    
+    while current_date <= end_date:
+        if is_business_day(current_date) and current_date not in holidays:
+            business_days_count += 1
+        
+        current_date += timedelta(days=1)
+    
+    return business_days_count
+
+start_date = datetime(2023, 7, 1)
+end_date = datetime(2023, 7, 31)
+holidays = [datetime(2023, 7, 4)]  
+business_days_count = calculate_business_days(start_date, end_date, holidays)
+print(f"\nNumber of business days between {start_date.date()} and {end_date.date()} (excluding holidays): {business_days_count}")
+
+-------------------------------------------------------------------------------------------------------------------
+
+8. ETL Process:
+8.a   Simulate an ETL process using Python that extracts data from a list of
+dictionaries, transforms it by normalizing numeric fields, and loads it into a
+Pandas DataFrame.
+
+import pandas as pd
+data = [
+    {'id': 1, 'name': 'Arun', 'age': 25, 'salary': 6000},
+    {'id': 2, 'name': 'Bob', 'age': 30, 'salary': 7500},
+    {'id': 3, 'name': 'Charles', 'age': 28, 'salary': 9000},
+    {'id': 4, 'name': 'David', 'age': 35, 'salary': 6000},
+    {'id': 5, 'name': 'Eve', 'age': 27, 'salary': 8000}
+]
+for entry in data:
+    entry['normalized_salary'] = entry['salary'] / 100  # Transforming by normalizing salary (dividing by 100)
+
+df = pd.DataFrame(data)
+
+# Display the DataFrame
+print("Transformed Data:")
+print(df)
+-------------------------------------------------------------------------------------------------------------------
+8.b Extend the ETL process to include a validation step that checks for data quality
+issues (e.g., missing values, outliers) before loading the data into the DataFrame.
+
+import pandas as pd
+import numpy as np
+data = {
+    'Date': ['2023-01-01', '2023-01-02', '2023-01-03', '2023-01-04', '2023-01-05'],
+    'Sales': [100, 120, np.nan, 150, 200]  # Simulating a missing value
+}
+
+df = pd.DataFrame(data)
+
+def validate_data(df):
+    issues_found = False
+    
+    if df.isnull().any().any():
+        issues_found = True
+        print("Missing values detected. Handling...")
+        df.fillna(method='ffill', inplace=True)  
+    
+    return issues_found
+
+if validate_data(df):
+    print("Data quality issues detected and resolved.")
+else:
+    print("No data quality issues detected.")
+
+print("\nCleaned DataFrame:")
+print(df)
+-------------------------------------------------------------------------------------------------------------------
+9. Data Normalization:
+9.a Write a function that normalizes the values in a DataFrame column to a range
+between 0 and 1.
+
+import pandas as pd
+def normalize_column(df, column_name):
+    column = df[column_name]
+
+    minVal = column.min()
+    maxVal = column.max()
+    
+    normalized_values = (column - minVal) / (maxVal - minVal)
+    
+    df[column_name] = normalized_values
+    
+    return df
+    
+data = {
+    'A': [1, 2, 3, 4, 5],
+    'B': [10, 20, 30, 40, 50],
+    'C': [100, 200, 300, 400, 500]
+}
+
+df = pd.DataFrame(data)
+normalized_df = normalize_column(df.copy(), 'B')
+print("Normalized DataFrame (column B):")
+print(normalized_df)
+-------------------------------------------------------------------------------------------------------------------
+9.b Write a function that standardizes the values in a DataFrame column (mean=0,
+standard deviation=1).
+
+import pandas as pd
+def standardize_column(df, column_name):
+    column = df[column_name]
+    meanValue = column.mean()
+    stdValue = column.std()
+    
+    
+    standardized_values = (column - meanValue) / stdValue
+    
+    df[column_name] = standardized_values
+    
+    return df
+data = {
+    'A': [1, 2, 3, 4, 5],
+    'B': [10, 20, 30, 40, 50],
+    'C': [100, 200, 300, 400, 500]
+}
+df = pd.DataFrame(data)
+standardized_df = standardize_column(df.copy(), 'C')
+print("\nStandardized DataFrame (column C):")
+print(standardized_df)
+
+-------------------------------------------------------------------------------------------------------------------
+10. Advanced List Comprehensions:
+10.a  Given a list of numbers, create a new list containing the square roots of the even
+numbers only, using list comprehension.
+
+import math
+numbers = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+square_roots_of_even = [math.sqrt(num) for num in numbers if num % 2 == 0]
+print("Original list of numbers:", numbers)
+print("Square roots of even numbers:", square_roots_of_even)
+-------------------------------------------------------------------------------------------------------------------
+10.b  Given a list of tuples representing (name, score), create a new list containing
+names of students who scored above the average, using list comprehension.
+
+student_scores = [
+    ("Alice", 85), ("Bob", 92), ("Charlie", 78), ("David", 88), ("Eve", 95), ("Frank", 82),("Grace", 90)]
+
+scores = [score for _, score in student_scores]
+average_score = sum(scores) / len(scores)
+
+above_average_students = [name for name, score in student_scores if score > average_score]
+
+print("Original list of student scores:")
+print(student_scores)
+print("\nNames of students who scored above the average:")
+print(above_average_students)
+
+-------------------------------------------------------------------------------------------------------------------
