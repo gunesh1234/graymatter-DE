@@ -1,0 +1,900 @@
+11. Unit Testing:
+11.a Write unit tests for a function that calculates the factorial of a number. Use the
+unittest framework.
+
+import unittest
+def factorial(n):
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers")
+    if n == 0:
+        return 1
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+
+class TestFactorialFunction(unittest.TestCase):
+    
+    def test_factorial_zero(self):
+        self.assertEqual(factorial(0), 1)
+    
+    def test_factorial_positive(self):
+        self.assertEqual(factorial(5), 120)
+    
+    def test_factorial_negative(self):
+        with self.assertRaises(ValueError):
+            factorial(-1)
+    
+    def test_factorial_large_number(self):
+        self.assertEqual(factorial(10), 3628800)
+
+if __name__ == '__main__':
+    unittest.main()
+-------------------------------------------------------------------------------------------------------------------
+11.b   Write unit tests for a function that checks if a given string is a palindrome.
+
+import unittest
+def is_palindrome(s):
+    s = s.lower().replace(" ", "")  
+    return s == s[::-1]
+
+class TestIsPalindromeFunction(unittest.TestCase):
+    
+    def test_palindrome_true(self):
+        self.assertTrue(is_palindrome("radar"))
+        self.assertTrue(is_palindrome("A Santa at NASA"))
+    
+    def test_palindrome_false(self):
+        self.assertFalse(is_palindrome("hello"))
+        self.assertFalse(is_palindrome("not a palindrome"))
+
+if __name__ == '__main__':
+    unittest.main()
+-------------------------------------------------------------------------------------------------------------------
+12. Decorators:
+12. a Create a decorator that logs the execution time of a function. Apply it to a
+function that sorts a large list.
+
+import time
+from functools import wraps
+def log_execution_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Execution time of {func.__name__}: {execution_time:.4f} seconds")
+        return result
+    return wrapper
+@log_execution_time
+def sort_large_list(large_list):
+    return sorted(large_list)
+
+if __name__ == '__main__':
+    
+    large_list = list(range(1000, 0, -1))
+    sorted_list = sort_large_list(large_list)
+    print(f"Sorted list: {sorted_list[:10]}... (truncated)")
+-------------------------------------------------------------------------------------------------------------------
+12.b  Create a decorator that retries a function up to 3 times if it raises an exception,
+with a delay between retries
+
+import time
+from functools import wraps
+
+def retry(max_retries=3, delay=1):
+    def decorator_retry(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    print(f"Attempt {retries + 1} failed: {str(e)}")
+                    retries += 1
+                    time.sleep(delay)
+            raise RuntimeError(f"Function {func.__name__} failed after {max_retries} retries")
+        return wrapper
+    return decorator_retry
+@retry(max_retries=3, delay=2)
+def unreliable_function():
+    import random
+    if random.random() < 0.7:
+        raise ValueError("Random failure")
+    return "Success"
+
+# Example usage
+if __name__ == '__main__':
+    try:
+        result = unreliable_function()
+        print(f"Function returned: {result}")
+    except RuntimeError as e:
+        print(f"Function failed: {str(e)}")
+-------------------------------------------------------------------------------------------------------------------
+13. Concurrency with Threads:
+13.a Write a program that uses threading to calculate the sum of a large list of
+numbers by dividing the work among multiple threads.
+
+import threading
+def sum_sublist(sublist, result):
+    result_sum = sum(sublist)
+    result.append(result_sum)
+def calculate_sum_with_threads(numbers, num_threads):
+    chunk_size = (len(numbers) + num_threads - 1) // num_threads
+    chunks = [numbers[i:i + chunk_size] for i in range(0, len(numbers), chunk_size)]
+    result = []
+    threads = []
+    for chunk in chunks:
+        thread = threading.Thread(target=sum_sublist, args=(chunk, result))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+    return sum(result)
+
+if __name__ == '__main__':
+    large_list = list(range(1, 1000001)) 
+    num_threads = 4  
+
+    total_sum = calculate_sum_with_threads(large_list, num_threads)
+    print(f"Total sum using {num_threads} threads: {total_sum}")
+-------------------------------------------------------------------------------------------------------------------
+13.b  Write a program that uses threading to fetch data from multiple URLs concurrently and print the status code of each response.
+
+import threading
+import requests
+
+def fetch_url(url):
+    try:
+        response = requests.get(url)
+        print(f"URL: {url}, Status Code: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"URL: {url}, Exception: {str(e)}")
+
+def fetch_urls_with_threads(urls):
+    # Create threads for each URL
+    threads = []
+    for url in urls:
+        thread = threading.Thread(target=fetch_url, args=(url,))
+        thread.start()
+        threads.append(thread)
+
+    for thread in threads:
+        thread.join()
+
+if __name__ == '__main__':
+    urls = [
+        "https://jsonplaceholder.typicode.com/posts/1",
+        "https://jsonplaceholder.typicode.com/posts/2",
+        "https://jsonplaceholder.typicode.com/posts/3",
+        "https://jsonplaceholder.typicode.com/posts/4",
+        "https://jsonplaceholder.typicode.com/posts/5"
+    ]
+    fetch_urls_with_threads(urls)
+-------------------------------------------------------------------------------------------------------------------
+14. Data Pipeline Simulation:
+14.a Simulate a data pipeline that processes a list of dictionaries, applying various
+transformations, and outputs the processed data as a list of dictionaries.
+
+data = [
+    {"id": 1, "name": "Akash", "age": 28, "city": "Mumbai"},
+    {"id": 2, "name": "Aarti", "age": 32, "city": "Delhi"},
+    {"id": 3, "name": "Arjun", "age": 30, "city": "Bangalore"},
+    {"id": 4, "name": "Priya", "age": 25, "city": "Chennai"},
+    {"id": 5, "name": "Ravi", "age": 35, "city": "Hyderabad"}
+]
+
+# Function to filter records based on age criteria
+def filter_records(records, min_age, max_age):
+    filtered_data = [record for record in records if min_age <= record['age'] <= max_age]
+    return filtered_data
+
+# Function to map records by selecting specific fields
+def map_records(records, fields):
+    mapped_data = [{field: record.get(field, None) for field in fields} for record in records]
+    return mapped_data
+
+# Function to simulate a data pipeline
+def data_pipeline(data):
+    # Example transformations
+    filtered_data = filter_records(data, 25, 30)
+    mapped_data = map_records(filtered_data, ['name', 'age'])
+
+    return mapped_data
+
+if __name__ == '__main__':
+    # Execute data pipeline and print the processed data
+    processed_data = data_pipeline(data)
+    print("Processed Data:")
+    for record in processed_data:
+        print(record)
+-------------------------------------------------------------------------------------------------------------------
+14.b Extend the pipeline to include an error-handling stage that logs any errors
+encountered during processing.
+
+data = [
+    {"id": 1, "name": "Akash", "age": 28, "city": "Mumbai"},
+    {"id": 2, "name": "Aarti", "age": 32, "city": "Delhi"},
+    {"id": 3, "name": "Arjun", "age": 30, "city": "Bangalore"},
+    {"id": 4, "name": "Priya", "age": 25, "city": "Chennai"},
+    {"id": 5, "name": "Ravi", "age": 35, "city": "Hyderabad"},
+    {"id": 6, "name": "Neha", "age": "unknown", "city": "Kolkata"}  # Intentional error for age
+]
+
+# Function to filter records based on age criteria
+def filter_records(records, min_age, max_age):
+    filtered_data = []
+    for record in records:
+        try:
+            age = int(record['age'])
+            if min_age <= age <= max_age:
+                filtered_data.append(record)
+        except ValueError as e:
+            print(f"Error filtering record {record}: {str(e)}")
+    return filtered_data
+
+# Function to map records by selecting specific fields
+def map_records(records, fields):
+    mapped_data = []
+    for record in records:
+        mapped_record = {}
+        for field in fields:
+            mapped_record[field] = record.get(field, None)
+        mapped_data.append(mapped_record)
+    return mapped_data
+
+# Function to simulate a data pipeline with error handling
+def data_pipeline(data):
+    try:
+        # Example transformations
+        filtered_data = filter_records(data, 25, 30)
+        mapped_data = map_records(filtered_data, ['name', 'age'])
+        
+        return mapped_data
+    except Exception as e:
+        print(f"Error in data pipeline: {str(e)}")
+        return []
+
+if __name__ == '__main__':
+    # Execute data pipeline and print the processed data
+    processed_data = data_pipeline(data)
+    print("\nProcessed Data:")
+    for record in processed_data:
+        print(record)
+-------------------------------------------------------------------------------------------------------------------
+15. Configuration Management:
+15.a Write a Python script that reads configuration settings from a dictionary and
+uses them to perform a specific task.
+
+config = {
+    "username": "admin",
+    "password": "secretpassword",
+    "host": "localhost",
+    "port": 5432,
+    "database": "mydatabase"
+}
+def perform_task_with_config(config):
+    # Example task: connecting to a database
+    print(f"Connecting to database {config['database']} on {config['host']}:{config['port']}...")
+
+
+if __name__ == "__main__":
+    perform_task_with_config(config)
+-------------------------------------------------------------------------------------------------------------------
+15.b   Write a function that validates the configuration settings, ensuring that all
+required fields are present and have valid values.
+
+# Function to validate configuration settings
+def validate_config(config):
+    required_fields = ["username", "password", "host", "port", "database"]
+    
+    for field in required_fields:
+        if field not in config:
+            return False, f"Missing required field: {field}"
+        elif not config[field]:
+            return False, f"Empty value for field: {field}"
+        # Additional validation logic can be added here
+    
+    return True, "Configuration is valid"
+
+if __name__ == "__main__":
+    # Validate configuration settings
+    is_valid, message = validate_config(config)
+    if is_valid:
+        print("Configuration is valid")
+    else:
+        print(f"Invalid configuration: {message}")
+-------------------------------------------------------------------------------------------------------------------
+16. Handling Large Data Sets:
+16.a Write a function that processes a large list of numbers in chunks and calculates
+the average value of the list.
+
+def process_large_numbers(numbers, chunk_size):
+    total_sum = 0
+    count = 0
+    for i in range(0, len(numbers), chunk_size):
+        chunk = numbers[i:i + chunk_size]
+        total_sum += sum(chunk)
+        count += len(chunk)
+    return total_sum / count if count > 0 else 0
+
+if __name__ == "__main__":
+    # Example usage
+    numbers = list(range(1, 1000001))  
+    chunk_size = 10000 
+    average = process_large_numbers(numbers, chunk_size)
+    print(f"Average value of the list: {average}")
+-------------------------------------------------------------------------------------------------------------------
+16.b Write a function that processes a large list of strings in chunks, counts the
+frequency of each string, and returns a dictionary with the results.
+
+from collections import defaultdict
+def process_large_strings(strings, chunk_size):
+    frequency_dict = defaultdict(int)
+    for i in range(0, len(strings), chunk_size):
+        chunk = strings[i:i + chunk_size]
+        for s in chunk:
+            frequency_dict[s] += 1
+    return dict(frequency_dict)
+
+if __name__ == "__main__":
+    
+    strings = ["apple", "banana", "apple", "orange", "banana", "apple", "apple", "banana"] * 100000  
+    chunk_size = 10000  
+    frequency = process_large_strings(strings, chunk_size)
+    print(f"Frequency dictionary: {frequency}")
+
+-------------------------------------------------------------------------------------------------------------------
+17. Class and Objects:
+17.a  Create a class representing a bank account with methods to deposit, withdraw,
+and check balance. Ensure proper error handling for invalid operations
+
+class BankAccount:
+    def __init__(self, account_number, initial_balance=0):
+        self.account_number = account_number
+        self.balance = initial_balance
+    
+    def deposit(self, amount):
+        if amount > 0:
+            self.balance += amount
+            print(f"Deposit of ${amount:.2f} successful.")
+        else:
+            print("Invalid deposit amount. Please enter a positive number.")
+    
+    def withdraw(self, amount):
+        if amount > 0:
+            if self.balance >= amount:
+                self.balance -= amount
+                print(f"Withdrawal of ${amount:.2f} successful.")
+            else:
+                print("Insufficient balance. Withdrawal not processed.")
+        else:
+            print("Invalid withdrawal amount. Please enter a positive number.")
+    
+    def check_balance(self):
+        return self.balance
+account = BankAccount('1234567890', 1000)
+account.deposit(500)
+print(f"Current balance: ${account.check_balance():.2f}")
+account.withdraw(200)
+print(f"Current balance: ${account.check_balance():.2f}")
+account.withdraw(-100)
+account.deposit(-50)
+-------------------------------------------------------------------------------------------------------------------
+17.b Extend the bank account class to support multiple currencies, with methods to
+convert between currencies using a given exchange rate.
+
+class BankAccount:
+    def __init__(self, account_number, balance=0, currency="INR"):
+        self.account_number = account_number
+        self.balance = balance
+        self.currency = currency
+
+    def deposit(self, amount):
+        if amount > 0:
+            self.balance += amount
+            print(f"Deposited {amount} {self.currency}. New balance is {self.balance} {self.currency}.")
+        else:
+            print("Deposit amount must be greater than zero.")
+
+    def withdraw(self, amount):
+        if 0 < amount <= self.balance:
+            self.balance -= amount
+            print(f"Withdrew {amount} {self.currency}. New balance is {self.balance} {self.currency}.")
+        else:
+            print("Invalid amount or insufficient funds.")
+
+    def check_balance(self):
+        print(f"Current balance of account {self.account_number} is {self.balance} {self.currency}.")
+
+    def set_currency(self, currency):
+        self.currency = currency
+
+    def convert_to(self, new_currency, exchange_rate):
+        if new_currency == self.currency:
+            print("Cannot convert to the same currency.")
+            return
+
+        if exchange_rate > 0:
+            new_balance = self.balance * exchange_rate
+            print(f"Converted {self.balance} {self.currency} to {new_balance} {new_currency} at rate {exchange_rate}.")
+            self.balance = new_balance
+            self.currency = new_currency
+        else:
+            print("Invalid exchange rate.")
+
+account1 = BankAccount("123456", 4000, "INR")
+account1.check_balance()
+account1.deposit(1000)
+account1.check_balance()
+account1.withdraw(2500)
+account1.check_balance()
+account1.convert_to("USD", 0.014)  
+account1.check_balance()
+-------------------------------------------------------------------------------------------------------------------
+18. Regular Expressions:
+18.a  Write a function that validates email addresses using regular expressions.
+import re
+def validate_email(email):  
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    regex = re.compile(pattern)
+    if regex.match(email):
+        return True
+    else:
+        return False
+email1 = "arun123@example.com"
+email2 = "invalid_email@"
+
+print(f"{email1} is valid: {validate_email(email1)}")
+print(f"{email2} is valid: {validate_email(email2)}")
+
+-------------------------------------------------------------------------------------------------------------------
+18.b   Write a function that extracts all the dates from a given text string in the format
+(DD-MM-YYYY). 
+
+import re
+def extract_dates(text):
+     date_pattern = r'\b(\d{2}-\d{2}-\d{4})\b'  
+     dates = re.findall(date_pattern, text)
+     return dates
+texts = "The project deadline is on 29-07-2024. Please submit the report by then. Another important date is 11-08-2024."
+extracted_dates = extract_dates(texts)
+print("Extracted dates:", extracted_dates)
+-------------------------------------------------------------------------------------------------------------------
+19. Data Encryption:
+19.a Write a Python script that encrypts and decrypts text using the Fernet symmetric
+encryption from the cryptography library.
+
+pip install cryptography
+from cryptography.fernet import Fernet
+
+def generate_key():
+    return Fernet.generate_key()
+
+def encrypt_message(message, key):
+    fernet = Fernet(key)
+    encrypted_message = fernet.encrypt(message.encode())
+    return encrypted_message
+
+def decrypt_message(encrypted_message, key):
+    fernet = Fernet(key)
+    decrypted_message = fernet.decrypt(encrypted_message).decode()
+    return decrypted_message
+
+if __name__ == "__main__":
+   
+    key = generate_key()
+    print(f"Generated Key: {key.decode()}")
+
+    plaintext_message = "Hello, this is a secret message!"
+
+    encrypted_message = encrypt_message(plaintext_message, key)
+    print(f"Encrypted Message: {encrypted_message}")
+
+    decrypted_message = decrypt_message(encrypted_message, key)
+    print(f"Decrypted Message: {decrypted_message}")
+-------------------------------------------------------------------------------------------------------------------
+19.b Write a function that encrypts and decrypts a dictionary of sensitive data,
+preserving the structure of the dictionary
+
+pip install cryptography
+from cryptography.fernet import Fernet
+import json
+
+# Generate a key for encryption and decryption
+def generate_key():
+    return Fernet.generate_key()
+
+# Encrypt dictionary
+def encrypt_dict(data_dict, key):
+    json_data = json.dumps(data_dict).encode()
+    fernet = Fernet(key)
+    encrypted_data = fernet.encrypt(json_data)
+    return encrypted_data
+
+# Decrypt dictionary
+def decrypt_dict(encrypted_data, key):
+    fernet = Fernet(key)
+    decrypted_data = fernet.decrypt(encrypted_data)
+    decrypted_json_data = decrypted_data.decode()
+    data_dict = json.loads(decrypted_json_data)
+    return data_dict
+
+if __name__ == "__main__":
+    # Generate a key (this should be securely stored and shared between encryption/decryption)
+    key = generate_key()
+    print(f"Generated Key: {key.decode()}")
+
+    # Example sensitive data dictionary
+    sensitive_data = {
+        "name": "Arjun",
+        "age": 35,
+        "address": {
+            "street": "13 Silk Board",
+            "city": "Bangalore"
+        }
+    }
+
+    # Encrypt dictionary
+    encrypted_data = encrypt_dict(sensitive_data, key)
+    print(f"Encrypted Data: {encrypted_data}")
+
+    # Decrypt dictionary
+    decrypted_data = decrypt_dict(encrypted_data, key)
+    print(f"Decrypted Data: {decrypted_data}")
+
+-------------------------------------------------------------------------------------------------------------------
+20. Memory Management:
+20.a Write a program to monitor memory usage of a Python script and log it to the
+console at regular intervals.
+
+import psutil
+import time
+
+def monitor_memory(interval_seconds=1, duration_seconds=10):
+    print(f"Monitoring memory usage every {interval_seconds} seconds for {duration_seconds} seconds...")
+
+    start_time = time.time()
+    while (time.time() - start_time) < duration_seconds:
+             memory_usage = psutil.virtual_memory()
+        
+    print(f"Memory Usage - Total: {memory_usage.total / (1024*1024):.2f} MB, "
+              f"Available: {memory_usage.available / (1024*1024):.2f} MB, "
+              f"Used: {memory_usage.used / (1024*1024):.2f} MB, "
+              f"Free: {memory_usage.free / (1024*1024):.2f} MB, "
+              f"Percentage: {memory_usage.percent:.2f}%")
+
+    time.sleep(interval_seconds)
+
+if __name__ == "__main__":
+    monitor_memory(interval_seconds=2, duration_seconds=30)
+-------------------------------------------------------------------------------------------------------------------
+20.b Write a function that generates a large list of random numbers and uses memory
+profiling to identify any memory leaks.
+
+pip install memory_profiler
+
+from memory_profiler import profile
+import random
+
+@profile
+def generate_large_list(size):
+    large_list = [random.random() for _ in range(size)]
+    return large_list
+
+if __name__ == "__main__":
+    # Generating a large list of random numbers with memory profiling
+    generate_large_list(1000000)  
+-------------------------------------------------------------------------------------------------------------------
+ 21. Parallel Processing:
+ 21.a Use the multiprocessing module to parallelize a CPU-bound task, such as
+calculating the prime numbers in a given range.
+
+import multiprocessing
+def is_prime(n):
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+def calculate_primes(start, end):
+    primes = []
+    for number in range(start, end + 1):
+        if is_prime(number):
+            primes.append(number)
+    return primes
+
+
+def parallel_prime_calculation(num_processes, start, end):
+    chunk_size = (end - start + 1) // num_processes
+    pool = multiprocessing.Pool(processes=num_processes)
+    results = []
+
+    for i in range(num_processes):
+        chunk_start = start + i * chunk_size
+        chunk_end = chunk_start + chunk_size - 1 if i < num_processes - 1 else end
+        results.append(pool.apply_async(calculate_primes, (chunk_start, chunk_end)))
+
+    pool.close()
+    pool.join()
+
+    primes = []
+    for result in results:
+        primes.extend(result.get())
+
+    return primes
+
+if __name__ == "__main__":
+    start_range = 1
+    end_range = 10000
+    num_processes = 4
+
+    print(f"Calculating prime numbers from {start_range} to {end_range} using {num_processes} processes...")
+    primes = parallel_prime_calculation(num_processes, start_range, end_range)
+    print(f"Found {len(primes)} prime numbers.")
+    print(primes)
+-------------------------------------------------------------------------------------------------------------------
+21.b Use the multiprocessing module to parallelize a CPU-bound task, such as
+calculating the prime numbers in a given range.
+
+import numpy as np
+import multiprocessing
+
+def matrix_multiplication_chunk(matrix1, matrix2_chunk):
+    return np.dot(matrix1, matrix2_chunk)
+
+def parallel_matrix_multiplication(matrix1, matrix2, num_processes):
+    if matrix1.shape[1] != matrix2.shape[0]:
+        raise ValueError("Matrix dimensions are not compatible for multiplication.")
+
+    chunk_size = matrix2.shape[1] // num_processes
+    pool = multiprocessing.Pool(processes=num_processes)
+    results = []
+
+    for i in range(num_processes):
+        chunk_start = i * chunk_size
+        chunk_end = chunk_start + chunk_size
+        chunk_matrix2 = matrix2[:, chunk_start:chunk_end]
+        results.append(pool.apply_async(matrix_multiplication_chunk, (matrix1, chunk_matrix2)))
+
+    pool.close()
+    pool.join()
+
+    result_matrix = np.hstack([res.get() for res in results])
+
+    return result_matrix
+
+if __name__ == "__main__":
+   
+    matrix1 = np.random.rand(2, 4)
+    matrix2 = np.random.rand(4, 5)
+    num_processes = 3
+
+    print("Matrix 1:")
+    print(matrix1)
+    print("Matrix 2:")
+    print(matrix2)
+
+    result_matrix = parallel_matrix_multiplication(matrix1, matrix2, num_processes)
+    print("Result Matrix (Parallel Multiplication):")
+    print(result_matrix)
+
+-------------------------------------------------------------------------------------------------------------------
+22. Error Handling:
+22.a Write a function that raises and handles custom exceptions to manage specific
+error cases in a given task.
+
+class FactorialError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
+def calculate_factorial(n):
+    if not isinstance(n, int):
+        raise FactorialError("Factorial can only be calculated for integers")
+    if n < 0:
+        raise FactorialError("Factorial is not defined for negative numbers")
+    if n == 0:
+        return 1
+    factorial = 1
+    for i in range(1, n + 1):
+        factorial *= i
+    return factorial
+
+# Example inputs:
+inputs = [5, 0, -1, 10.5, 'abc']
+
+for num in inputs:
+    try:
+        result = calculate_factorial(num)
+        print(f"The factorial of {num} is: {result}")
+    except ValueError:
+        print(f"Error: Input must be a valid integer")
+    except FactorialError as e:
+        print(f"FactorialError: {e.message}")
+    except Exception as e:
+        print(f"Unexpected Error: {str(e)}")
+
+-------------------------------------------------------------------------------------------------------------------
+22.b Write a function that uses context managers to handle resources (e.g., database
+connections) and properly handles exceptions that may occur during resource
+usage.
+
+import sqlite3
+def perform_database_operations(database_file):
+    try:
+        
+        with sqlite3.connect(database_file) as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+                                id INTEGER PRIMARY KEY,
+                                name TEXT NOT NULL,
+                                age INTEGER
+                            )''')
+
+           
+            cursor.execute("INSERT INTO users (name, age) VALUES (?, ?)", ('Arun', 32))
+
+            conn.commit()
+
+            # Example operation: Querying data
+            cursor.execute("SELECT * FROM users")
+            rows = cursor.fetchall()
+            print("Retrieved rows:")
+            for row in rows:
+                print(row)
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+
+
+if __name__ == "__main__":
+    database_file = "example.db"
+    perform_database_operations(database_file)
+
+-------------------------------------------------------------------------------------------------------------------
+23. Recursion:
+23.a. Write a recursive function to calculate the nth Fibonacci number
+
+def fibonacci(n):
+    if n <= 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+n = 9
+result = fibonacci(n)
+print(f"The {n}th Fibonacci number is: {result}")
+-------------------------------------------------------------------------------------------------------------------
+23.b. Write a recursive function to solve the Tower of Hanoi problem.
+
+def tower_of_hanoi(n, source, target, temp):
+    if n == 1:
+        print(f"Move disk 1 from {source} to {target}")
+        return
+    else:
+        tower_of_hanoi(n-1, source, temp, target)
+        print(f"Move disk {n} from {source} to {target}")
+        tower_of_hanoi(n-1, temp, target, source)
+n = 4
+tower_of_hanoi(n, 'A', 'C', 'B')
+-------------------------------------------------------------------------------------------------------------------
+24. Data Merging:
+24.a Given two lists of dictionaries, write a function to merge them based on a
+common key.
+
+def merge_lists_of_dicts(list1, list2, common_key):
+    merged_list = []
+    dict2 = {item[common_key]: item for item in list2}
+    for item1 in list1:
+        key = item1[common_key]
+        if key in dict2:
+            merged_item = {**item1, **dict2[key]}  # Merge dictionaries
+            merged_list.append(merged_item)
+        else:
+            merged_list.append(item1)  # If no match found, add item from list1
+    for item2 in list2:
+        key = item2[common_key]
+        if key not in dict2:
+            merged_list.append(item2)
+    
+    return merged_list
+list1 = [
+    {'id': 1, 'name': 'Alice', 'age': 25},
+    {'id': 2, 'name': 'Bob', 'age': 30},
+    {'id': 3, 'name': 'Charlie', 'age': 35}
+]
+
+list2 = [
+    {'id': 2, 'city': 'New York'},
+    {'id': 3, 'city': 'Los Angeles'},
+    {'id': 4, 'city': 'Chicago'}
+]
+
+merged_list = merge_lists_of_dicts(list1, list2, 'id')
+print("Merged List:")
+print(merged_list)
+-------------------------------------------------------------------------------------------------------------------
+24.b Write a function that merges multiple DataFrames based on a common key and
+handles conflicts by keeping the most recent data.
+
+import pandas as pd
+def merge_dataframes_on_key(dataframes, key):
+    merged_df = dataframes[0]    
+    for df in dataframes[1:]:
+        merged_df = pd.merge(merged_df, df, on=key, how='outer') 
+    merged_df = merged_df.sort_values(by=key)
+    merged_df = merged_df.drop_duplicates(subset=key, keep='last')
+    return merged_df
+
+df1 = pd.DataFrame({'id': [1, 2, 3], 'value': ['A', 'B', 'C']})
+df2 = pd.DataFrame({'id': [2, 3, 4], 'value': ['D', 'E', 'F']})
+df3 = pd.DataFrame({'id': [1, 3, 4], 'value': ['G', 'H', 'I']})
+
+dataframes = [df1, df2, df3]
+merged_df = merge_dataframes_on_key(dataframes, 'id')
+print("Merged DataFrame:")
+print(merged_df)
+-------------------------------------------------------------------------------------------------------------------
+25. Statistical Analysis:
+25.a Write a function that calculates the mean, median, and mode of a list of numbers.
+
+import numpy as np
+from scipy import stats
+def calculate_statistics(numbers):
+    if not numbers:
+        raise ValueError("List of numbers is empty")
+    mean = np.mean(numbers)
+    median = np.median(numbers)
+    mode_result = stats.mode(numbers)
+    mode = mode_result.mode.tolist()  
+    return mean, median, mode
+
+numbers = [1, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9]
+
+try:
+    mean, median, mode = calculate_statistics(numbers)
+    print(f"List of Numbers: {numbers}")
+    print(f"Mean: {mean}")
+    print(f"Median: {median}")
+    print(f"Mode: {mode}")
+except ValueError as e:
+    print(f"Error: {e}")
+-------------------------------------------------------------------------------------------------------------------
+25.b  Write a function that calculates the standard deviation and variance of a list of
+numbers.
+
+import numpy as np
+def calculate_std_and_var(numbers):
+    if not numbers:
+        raise ValueError("List of numbers is empty")
+    variance = np.var(numbers)
+    std_deviation = np.std(numbers)
+    
+    return std_deviation, variance
+
+numbers = [1, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9]
+
+try:
+    std_deviation, variance = calculate_std_and_var(numbers)
+    print(f"List of Numbers: {numbers}")
+    print(f"Standard Deviation: {std_deviation:.2f}")
+    print(f"Variance: {variance:.2f}")
+except ValueError as e:
+    print(f"Error: {e}")
+
+-------------------------------------------------------------------------------------------------------------------
