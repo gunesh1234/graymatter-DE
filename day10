@@ -1,0 +1,110 @@
+
+
+----------------------------------------------------Only functions-------------------------------------------------------
+def calculate_annual_salary(hourly_wage, hours_per_week, weeks_per_year):
+    return hourly_wage*hours_per_week*weeks_per_year
+
+def calculate_vacation_days(years_with_company):
+    if years_with_company<4:
+        return 5
+    elif years_with_company<7:
+        return 10
+    else:
+        return 20
+
+
+def calculate_total_payroll(employees):
+
+    total_payroll = 0
+    for employee in employees:
+        total_payroll += calculate_annual_salary(employee['hourly_wage'],employee['hours_per_week'],employee['weeks_per_year'])
+    return total_payroll
+
+def calculate_total_vacation_days_granted(employees):
+    total_vacation_days = 0
+    for employee in employees:
+        total_vacation_days += calculate_vacation_days(employee['years_with_company'])
+    return total_vacation_days
+
+employees = [
+    {'hourly_wage': 25, 'hours_per_week': 40, 'weeks_per_year': 52, 'years_with_company': 3},
+    {'hourly_wage': 30, 'hours_per_week': 40, 'weeks_per_year': 52, 'years_with_company': 6},
+    {'hourly_wage': 20, 'hours_per_week': 40, 'weeks_per_year': 52, 'years_with_company': 8}
+]
+
+print(f"Total Payroll: ${calculate_total_payroll(employees):,.2f}")
+print(f"Total Vacation Days Granted: {calculate_total_vacation_days_granted(employees)} days")
+
+
+--------------------------------------------  with the classes ----------------------------------------------------
+
+
+class Employee:
+    def __init__(self, hourly_wage, hours_per_week, weeks_per_year, years_with_company):
+        self.hourly_wage = hourly_wage
+        self.hours_per_week = hours_per_week
+        self.weeks_per_year = weeks_per_year
+        self.years_with_company = years_with_company
+
+    def calculate_annual_salary(self):
+        return self.hourly_wage * self.hours_per_week * self.weeks_per_year
+
+    def calculate_vacation_days(self):
+        if self.years_with_company < 4:
+            return 10
+        elif self.years_with_company < 7:
+            return 15
+        else:
+            return 20
+
+
+class Employer:
+    def __init__(self, employees):
+        self.employees = employees  
+
+    def calculate_total_payroll(self):
+        total_payroll = 0
+        for employee in self.employees:
+            total_payroll += employee.calculate_annual_salary()
+        return total_payroll
+
+    def calculate_total_vacation_days_granted(self):
+        total_vacation_days = 0
+        for employee in self.employees:
+            total_vacation_days += employee.calculate_vacation_days()
+        return total_vacation_days
+
+
+employee1 = Employee(hourly_wage=25, hours_per_week=40, weeks_per_year=52, years_with_company=3)
+employee2 = Employee(hourly_wage=30, hours_per_week=40, weeks_per_year=52, years_with_company=6)
+employee3 = Employee(hourly_wage=20, hours_per_week=40, weeks_per_year=52, years_with_company=8)
+
+employer = Employer(employees=[employee1, employee2, employee3])
+
+print(f"Total salary for employer 1 : ${employee1.calculate_annual_salary():,.2f}")
+print(f"Total salary for employer 2 : ${employee2.calculate_annual_salary():,.2f}")
+print(f"Total Payroll: ${employer.calculate_total_payroll():,.2f}")
+print(f"Total Vacation Days Granted: {employer.calculate_total_vacation_days_granted()} days")
+
+
+------------------------------------------------------example 3 --------------------------------------------------
+
+
+class Employee:
+    def __init__(self,Emp_id,Emp_name,project_id,project_manager):
+        self.Emp_id = Emp_id
+        self.Emp_name = Emp_name
+        self.project_id = project_id
+        self.project_manager = project_manager
+    def project_details(self, members,stack,duration):
+        self.members = members
+        self. stack =  stack
+        self.duration =  duration
+        return f"Members : {members}, stack : {stack}, duration : {duration}"
+        return  self.duration
+    def salary(self,wage):
+        return wage * self.duration
+employee1 =  Employee(101,"gunesh",23,"abc")
+details =  employee1.project_details(3,"java",5)
+print(f"details : {details}")
+print(f"the employee 1 salary is ${employee1.salary(12):,.2f}")
