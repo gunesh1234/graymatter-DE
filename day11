@@ -1,0 +1,57 @@
+day 11--------------------------------------
+
+Azure Data Factory Basics
+Pipelines: Group activities to perform data tasks.
+Activities: Tasks within pipelines (e.g., Copy, Data Flow).
+Datasets: Define data structure and location.
+Linked Services: Connection configurations for data sources and sinks.
+Integration Runtime (IR): Compute infrastructure for data operations.
+
+Steps to Copy Data
+Create Data Factory:
+
+In Azure portal: "Create a resource" > "Data Factory."
+Create Linked Services:
+
+Go to "Manage" > "Linked services" > "New."
+Set up connections to data sources (e.g., Blob Storage, SQL Database).
+
+Create Datasets:
+
+Go to "Author" > "Datasets" > "New dataset."
+Configure source and sink datasets.
+
+
+Create and Configure Pipeline:
+
+Go to "Author" > "Pipelines" > "New pipeline."
+Add a "Copy Data" activity, set source and sink datasets.
+
+
+Run and Monitor:
+
+Click "Debug" to test, "Publish All" to save.
+Use "Add trigger" to schedule or trigger manually.
+
+
+Workflow Activities
+Execute Pipeline: Runs another pipeline.
+If Condition: Conditional branching based on expressions.
+For Each: Iterates over items and executes activities.
+Until: Repeats activities until a condition is met.
+Copy Activity: Moves data between sources.
+Data Flow: Transforms data with a visual interface.
+Web Activity: Calls web services or APIs.
+Stored Procedure: Executes SQL stored procedures.
+
+
+Using Secrets
+Create Key Vault:
+Store secrets (e.g., passwords, connection strings).
+
+Create Linked Service for Key Vault:
+Go to "Manage" > "Linked services" > "New" > "Azure Key Vault."
+
+Use Secrets:
+Reference secrets in Linked Services, Datasets, and Pipelines using @Microsoft.KeyVault(SecretUri=...).
+
